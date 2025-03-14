@@ -119,11 +119,11 @@ defmodule Minesweeper do
   def reduce([], acc, _f), do: acc
   def reduce([h|t], acc, f), do: f.(h, reduce(t, acc, f))
 
-  def pegaTam([]), do: 0
-  def pegaTam([_h|t]), do: pegaTam(t) +1
+  def pega_tam([]), do: 0
+  def pega_tam([_h|t]), do: pega_tam(t) +1
 
   def conta_minas_adj(tab, l, c) do
-    reduce(map(valid_moves(pegaTam(tab), l, c), fn({i,j}) ->
+    reduce(map(valid_moves(pega_tam(tab), l, c), fn({i,j}) ->
       cond do
         is_mine(tab,i,j) -> 1
         true -> 0
@@ -160,7 +160,7 @@ defmodule Minesweeper do
       conta_minas_adj(minas, l, c) > 0 -> update_pos(tab, l, c, conta_minas_adj(minas, l, c))
       true ->
         novo_tab = update_pos(tab, l, c, "0")
-        reduce(valid_moves(pegaTam(tab), l, c), novo_tab, fn({i,j}, acc_tab) -> abre_jogada(i, j, minas, acc_tab) end)
+        reduce(valid_moves(pega_tam(tab), l, c), novo_tab, fn({i,j}, acc_tab) -> abre_jogada(i, j, minas, acc_tab) end)
     end
   end
 
@@ -198,7 +198,7 @@ defmodule Minesweeper do
   def lista_indices(ultimo), do: lista_indices(ultimo-1) ++ [ultimo]
 
   def abre_tabuleiro(minas, tab) do
-    tamanho = pegaTam(tab)
+    tamanho = pega_tam(tab)
   
     reduce(lista_indices(tamanho-1), tab, fn (l, acc_tab) ->
       reduce(lista_indices(tamanho-1), acc_tab, fn (c, acc_tab2) ->
@@ -233,7 +233,7 @@ defmodule Minesweeper do
   end
 
   def board_to_string(tab) do
-    tamanho = pegaTam(tab)
+    tamanho = pega_tam(tab)
     
     string_cabecalho(tamanho-1) <> "\n" <> string_linhas(tab, tamanho-1)
   end
@@ -313,48 +313,62 @@ end
 # todas implementadas
 
 defmodule Motor do
- def main() do
-  v = IO.gets("Digite o tamanho do tabuleiro: \n")
-  {size,_} = Integer.parse(v)
-  minas = gen_mines_board(size)
-  IO.inspect minas
-  tabuleiro = Minesweeper.gera_tabuleiro(size)
-  game_loop(minas,tabuleiro)
- end
- def game_loop(minas,tabuleiro) do
-   IO.puts Minesweeper.board_to_string(tabuleiro)
-   v = IO.gets("Digite uma linha: \n")
-   {linha,_} = Integer.parse(v)
-   v = IO.gets("Digite uma coluna: \n")
-   {coluna,_} = Integer.parse(v)
-   if (Minesweeper.is_mine(minas,linha,coluna)) do
-     IO.puts "VOCÊ PERDEU!!!!!!!!!!!!!!!!"
-     IO.puts Minesweeper.board_to_string(Minesweeper.abre_tabuleiro(minas,tabuleiro))
-     IO.puts "TENTE NOVAMENTE!!!!!!!!!!!!"
-   else
-     novo_tabuleiro = Minesweeper.abre_jogada(linha,coluna,minas,tabuleiro)
-     if (Minesweeper.end_game(minas,novo_tabuleiro)) do
-         IO.puts "VOCÊ VENCEU!!!!!!!!!!!!!!"
-         IO.puts Minesweeper.board_to_string(Minesweeper.abre_tabuleiro(minas,novo_tabuleiro))
-         IO.puts "PARABÉNS!!!!!!!!!!!!!!!!!"
-     else
-         game_loop(minas,novo_tabuleiro)
-     end
-   end
- end
- def gen_mines_board(size) do
-   add_mines(ceil(size*size*0.15), size, Minesweeper.gera_mapa_de_minas(size))
- end
- def add_mines(0,_size,mines), do: mines
- def add_mines(n,size,mines) do
-   linha = :rand.uniform(size-1)
-   coluna = :rand.uniform(size-1)
-   if Minesweeper.is_mine(mines,linha,coluna) do
-     add_mines(n,size,mines)
-   else
-     add_mines(n-1,size,Minesweeper.update_pos(mines,linha,coluna,true))
-   end
- end
+  def main() do
+    v = IO.gets("Digite o tamanho do tabuleiro: \n")
+    {size,_} = Integer.parse(v)
+    minas = gen_mines_board(size)
+    IO.inspect minas
+    tabuleiro = Minesweeper.gera_tabuleiro(size)
+    game_loop(minas,tabuleiro,size)
+  end
+  def game_loop(minas,tabuleiro,size) do
+    IO.puts Minesweeper.board_to_string(tabuleiro)
+    linha = pega_linhas(size)
+    coluna = pega_colunas(size)
+    if (Minesweeper.is_mine(minas,linha,coluna)) do
+      IO.puts "VOCÊ PERDEU!!!!!!!!!!!!!!!!"
+      IO.puts Minesweeper.board_to_string(Minesweeper.abre_tabuleiro(minas,tabuleiro))
+      IO.puts "TENTE NOVAMENTE!!!!!!!!!!!!"
+    else
+      novo_tabuleiro = Minesweeper.abre_jogada(linha,coluna,minas,tabuleiro)
+      if (Minesweeper.end_game(minas,novo_tabuleiro)) do
+        IO.puts "VOCÊ VENCEU!!!!!!!!!!!!!!"
+        IO.puts Minesweeper.board_to_string(Minesweeper.abre_tabuleiro(minas,novo_tabuleiro))
+        IO.puts "PARABÉNS!!!!!!!!!!!!!!!!!"
+      else
+        game_loop(minas,novo_tabuleiro,size)
+      end
+    end
+  end
+  def gen_mines_board(size) do
+    add_mines(ceil(size*size*0.15), size, Minesweeper.gera_mapa_de_minas(size))
+  end
+  def add_mines(0,_size,mines), do: mines
+  def add_mines(n,size,mines) do
+    linha = :rand.uniform(size-1)
+    coluna = :rand.uniform(size-1)
+    if Minesweeper.is_mine(mines,linha,coluna) do
+      add_mines(n,size,mines)
+    else
+      add_mines(n-1,size,Minesweeper.update_pos(mines,linha,coluna,true))
+    end
+  end
+  def pega_linhas(size) do
+    v = IO.gets("Digite uma linha: \n")
+    {linha,_} = Integer.parse(v)
+    cond do
+      Minesweeper.is_valid_pos(size, linha, 0) -> linha
+      true -> pega_linhas(size)
+    end
+  end
+  def pega_colunas(size) do
+    v = IO.gets("Digite uma coluna: \n")
+    {coluna,_} = Integer.parse(v)
+    cond do
+      Minesweeper.is_valid_pos(size, 0, coluna) -> coluna
+      true -> pega_colunas(size)
+    end
+  end
 end
 
 #Motor.main()
